@@ -120,7 +120,8 @@ for dirIndex in "${!BACKUP_DIR_LIST[@]}"; do
 
     if [ ! -d "$dir" ]; then
         error "Directory not found under ${Yel}$dir${NC}."
-        exit
+        info "SKIP, try next backup directory."
+        continue
     fi
 
     success "Directory found under  ${Yel}$dir${NC}."
