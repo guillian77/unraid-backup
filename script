@@ -1,0 +1,203 @@
+#!/bin/bash
+#encoding=utf8
+
+# ------------------------------------------------------------------------------------------------------------------------------------------------------------
+# BACKUP SCRIPT
+# ------------------------------------------------------------------------------------------------------------------------------------------------------------
+#
+# @author Aufrère Guillian
+# @copyright 2022
+#
+# This script is able to backup and crypt un list of directories.
+#
+# Depedencies :
+#
+# [age] : ich777
+# Install : Unraid -> Apps -> Age
+# Description : Used to crypt files.
+#
+# [User Scripts] : Andrew Zawadzki
+# Install : Unraid -> Apps -> User Scripts
+# Description : Used to run and schedule bash script.
+#
+
+# Decrypt
+# age --decrypt -i key.txt -o eco.tar.gz eco.tar.gz.age
+
+# ------------------------------------------------------------------------------------------------------------------------------------------------------------
+# CONFIG
+# ------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# List of target backup dirs: where "BACKUP_DIR_LIST" will be saved.
+declare -A BACKUP_TARGET_LIST
+
+BACKUP_TARGET_LIST[antonin]="/mnt/remotes/ANTONIN.IP_guillian_backups/"
+BACKUP_TARGET_LIST[mark1]="/mnt/remotes/MARK1.LOC_backup/"
+
+# List of directories to backup.
+declare -A BACKUP_DIR_LIST
+
+BACKUP_DIR_LIST[bitwarden]="/mnt/user/appdata/vaultwarden"
+BACKUP_DIR_LIST[guillianPapers]="/mnt/user/guillian_papers"
+# BACKUP_DIR_LIST[guillianPictures]="/mnt/user/guillian_pictures"
+BACKUP_DIR_LIST[pfsense]="/mnt/user/backups/Pfsense"
+BACKUP_DIR_LIST[unraid]="/mnt/user/backups/Unraid"
+
+# ------------------------------------------------------------------------------------------------------------------------------------------------------------
+# DEFINE PATHS
+# ------------------------------------------------------------------------------------------------------------------------------------------------------------
+SCRIPT_PATH="/boot/config/plugins/user.scripts/scripts/backup"
+
+SECRET_KEY_PATH="${SCRIPT_PATH}/key.txt"
+
+# ------------------------------------------------------------------------------------------------------------------------------------------------------------
+# FUNCTIONS
+# ------------------------------------------------------------------------------------------------------------------------------------------------------------
+bigTitle()
+{
+    echo -e "$(date +'%Y-%m-%d') #--------------------------------------------------------------#"
+    echo -e "$(date +'%Y-%m-%d') # $1"
+    echo -e "$(date +'%Y-%m-%d') #--------------------------------------------------------------#"
+}
+
+title()
+{
+    echo -e "$(date +'%Y-%m-%d') ----------------------------------------------------------------"
+    echo -e "$(date +'%Y-%m-%d') $1"
+    echo -e "$(date +'%Y-%m-%d') ----------------------------------------------------------------"
+}
+
+section()
+{
+    echo -e "$(date +'%Y-%m-%d') # --- $1"
+}
+
+info()
+{
+    echo -e "$(date +'%Y-%m-%d') INFO $1"
+}
+
+success()
+{
+    echo -e "$(date +'%Y-%m-%d') SUCCESS $1."
+}
+
+error()
+{
+    echo -e "$(date +'%Y-%m-%d') ERROR $1."
+}
+
+# Allow to backup "BACKUP_DIR_LIST" to target
+#
+# @param [String] $1 target backup directory (remote or local server/dir).
+backup_dirs_to()
+{
+    if [ -z "$1" ];then
+        error "Backup target should be specified!"
+
+        return
+    fi
+
+    BACKUPS_DIR="$1"
+
+    section "Backup directories to ${BACKUPS_DIR}"
+
+    if [ ! -d "$BACKUPS_DIR" ]
+    then
+        error "Backup directory not found."
+        info "$BACKUPS_DIR"
+        exit
+    fi
+
+    success "Backup directory found."
+    info "$BACKUPS_DIR"
+
+    mkdir -p "$BACKUPS_DIR/crypted"
+
+    for dirIndex in "${!BACKUP_DIR_LIST[@]}"; do
+        dir="${BACKUP_DIR_LIST[$dirIndex]}"
+
+        title "Backup $dirIndex"
+
+        if [ ! -d "$dir" ]; then
+            error "Directory not found under ${Yel}$dir${NC}."
+            info "SKIP, try next backup directory."
+            continue
+        fi
+
+        success "Directory found under $dir."
+
+        tempBackupDir="${BACKUPS_DIR}crypted/"
+
+        # -- Compress && Crypt
+        archiveName="$(date +'%Y-%m-%d')_${dirIndex}.tar.gz"
+
+        info "Compress && Crypt ${archiveName} to ${archiveName}.age."
+        info "Target : ${tempBackupDir}${archiveName}.age"
+
+        tar -cz ${dir} | age -r $(age-keygen -y ${SECRET_KEY_PATH}) > "${tempBackupDir}${archiveName}.age"
+    done
+}
+
+# Backup unraid boot configuration.
+generateUnraidFlashBackup()
+{
+    title "Backuping full unraid configuration."
+
+    targetUnraidFlashName="$(date +'%Y-%m-%d')_flash_full"
+    targetUnraidBackupDir="/mnt/user/backups/Unraid/"
+    targetUnraidFullPath="${targetUnraidBackupDir}${targetUnraidFlashName}"
+
+    if [ -d "${targetUnraidFullPath}" ]; then
+        info "Already exist, remove before: ${targetUnraidFullPath}."
+        rm -rf "${targetUnraidFullPath}"
+    fi
+
+    info "Copying unraid boot configuration."
+    cp -r "/boot" "${targetUnraidFullPath}"
+
+    info "Create unraid boot configuration archive."
+    (cd "${targetUnraidFullPath}" && zip -r9 "${targetUnraidFullPath}.zip" *)
+
+    info "Clean up old directory."
+    rm -rf "${targetUnraidFullPath}" || true
+}
+
+backupPfsense()
+{
+    title "Backup remote pfsense."
+
+    targetBackupDir="/mnt/user/backups/Pfsense/"
+    pfsenseDirName="$(date +'%Y-%m-%d')_pfsense_full"
+    fullPath="${targetBackupDir}${pfsenseDirName}"
+
+    if [ -d "${fullPath}" ]; then
+        info "Already exist, remove before: ${fullPath}."
+        rm -rf "${fullPath}"
+    fi
+
+    mkdir -p "$fullPath"
+
+    scp -r admin@firewall.loc:/cf/conf/backup "$fullPath" || true
+    scp admin@firewall.loc:/cf/conf/config.xml "$fullPath" || true
+}
+
+# ----------------------------------------------------------------------------------------------------------------------
+# SCRIPT ITSELF
+# ----------------------------------------------------------------------------------------------------------------------
+bigTitle "BACKUP SCRIPT START"
+
+section "BEFORE BACKUP DIRS."
+
+# Remote connect to Pfsense to get backups and conf.
+backupPfsense
+
+# Backup unraid flash config before.
+generateUnraidFlashBackup
+
+# Copy, encrypt any of "BACKUP_DIR_LIST" directory on each "BACKUP_TARGET_LIST" servers.
+for targetIndex in "${!BACKUP_TARGET_LIST[@]}"; do
+    targetPath="${BACKUP_TARGET_LIST[$targetIndex]}"
+
+    backup_dirs_to "$targetPath"
+done
