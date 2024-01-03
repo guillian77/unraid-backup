@@ -13,7 +13,7 @@ backup_dirs_to()
 
     BACKUPS_DIR="$1"
 
-    section "Backup directories to ${BACKUPS_DIR}"
+    title "Backup directories to ${BACKUPS_DIR}"
 
     if [ ! -d "$BACKUPS_DIR" ]
     then
@@ -32,7 +32,7 @@ backup_dirs_to()
     for dirIndex in "${!BACKUP_DIR_LIST[@]}"; do
         dir="${BACKUP_DIR_LIST[$dirIndex]}"
 
-        title "Backup $dirIndex"
+        section "Backup $dirIndex"
 
         if [ ! -d "$dir" ]; then
             error "Directory not found under ${Yel}$dir${NC}."

@@ -2,21 +2,21 @@
 
 bigTitle()
 {
-    echo -e "<span style='color: grey;'>$(date +'%Y-%m-%d') #--------------------------------------------------------------#</span>"
-    echo -e "<span style='color: grey;'>$(date +'%Y-%m-%d') # $1</span>"
-    echo -e "<span style='color: grey;'>$(date +'%Y-%m-%d') #--------------------------------------------------------------#</span>"
+    echo -e "$(date +'%Y-%m-%d') <span style='color: black; font-weight: bold;'>#--------------------------------------------------------------#</span>"
+    echo -e "$(date +'%Y-%m-%d') <span style='color: black; font-weight: bold;'># $1</span>"
+    echo -e "$(date +'%Y-%m-%d') <span style='color: black; font-weight: bold;'>#--------------------------------------------------------------#</span>"
 }
 
 title()
 {
-    echo -e "<span style='color: grey;'>$(date +'%Y-%m-%d') ----------------------------------------------------------------"
-    echo -e "<span style='color: grey;'>$(date +'%Y-%m-%d') $1"
-    echo -e "<span style='color: grey;'>$(date +'%Y-%m-%d') ----------------------------------------------------------------"
+    echo -e "$(date +'%Y-%m-%d') <span style='color: #8c8c8c; font-weight: bold;'> ---------------------------------------------------------------"
+    echo -e "$(date +'%Y-%m-%d') <span style='color: #8c8c8c; font-weight: 300;'> $1"
+    echo -e "$(date +'%Y-%m-%d') <span style='color: #8c8c8c; font-weight: bold;'> ---------------------------------------------------------------"
 }
 
 section()
 {
-    echo -e "$(date +'%Y-%m-%d') # --- $1"
+    echo -e "$(date +'%Y-%m-%d') <b style='color: #2f4f4f; text-transform: uppercase; font-weight: bold;'>[ > $1 ]</b>"
 }
 
 info()
