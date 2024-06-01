@@ -32,14 +32,12 @@ SCRIPT_PATH="/boot/config/plugins/user.scripts/scripts/backup"
 
 declare -A BACKUP_TARGET_LIST
 declare -A BACKUP_DIR_LIST
-declare -A TO_PURGE_DIR_LIST
 
 # ----------------------------------------------------------------------------------------------------------------------
 # SOURCES
 # ----------------------------------------------------------------------------------------------------------------------
 source "${SCRIPT_PATH}/src/message.sh"
 source "${SCRIPT_PATH}/src/backup.sh"
-source "${SCRIPT_PATH}/src/purge.sh"
 source "${SCRIPT_PATH}/config.sh"
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -48,20 +46,13 @@ source "${SCRIPT_PATH}/config.sh"
 bigTitle "BACKUP SCRIPT START"
 
 # Remote connect to Pfsense to get backups and conf.
-backupPfsense
+# backup_pfsense
 
 # Copy, encrypt any of "BACKUP_DIR_LIST" directory on each "BACKUP_TARGET_LIST" servers.
 for targetIndex in "${!BACKUP_TARGET_LIST[@]}"; do
     targetPath="${BACKUP_TARGET_LIST[$targetIndex]}"
 
-    backup_dirs_to "$targetPath"
-done
-
-title "Purge"
-for targetIndex in "${!TO_PURGE_DIR_LIST[@]}"; do
-    targetPath="${TO_PURGE_DIR_LIST[$targetIndex]}"
-
-    purge "$targetPath" "*_full"
+    handle_dirs "$targetPath"
 done
 
 success "Backup script done"
