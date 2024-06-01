@@ -26,17 +26,17 @@
 
 SCRIPT_PATH="/boot/config/plugins/user.scripts/scripts/backup"
 
-# ------------------------------------------------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # CONFIG
-# ------------------------------------------------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 
 declare -A BACKUP_TARGET_LIST
 declare -A BACKUP_DIR_LIST
 declare -A TO_PURGE_DIR_LIST
 
-# ------------------------------------------------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # SOURCES
-# ------------------------------------------------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 source "${SCRIPT_PATH}/src/message.sh"
 source "${SCRIPT_PATH}/src/backup.sh"
 source "${SCRIPT_PATH}/src/purge.sh"
@@ -50,9 +50,6 @@ bigTitle "BACKUP SCRIPT START"
 # Remote connect to Pfsense to get backups and conf.
 backupPfsense
 
-# Backup unraid flash config before.
-generateUnraidFlashBackup
-
 # Copy, encrypt any of "BACKUP_DIR_LIST" directory on each "BACKUP_TARGET_LIST" servers.
 for targetIndex in "${!BACKUP_TARGET_LIST[@]}"; do
     targetPath="${BACKUP_TARGET_LIST[$targetIndex]}"
@@ -60,7 +57,7 @@ for targetIndex in "${!BACKUP_TARGET_LIST[@]}"; do
     backup_dirs_to "$targetPath"
 done
 
-# PURGE
+title "Purge"
 for targetIndex in "${!TO_PURGE_DIR_LIST[@]}"; do
     targetPath="${TO_PURGE_DIR_LIST[$targetIndex]}"
 
